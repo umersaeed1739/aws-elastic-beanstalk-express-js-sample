@@ -25,6 +25,7 @@ pipeline {
             }
         }
 
+        stages {
         stage('Checkout') {
             steps {
                 checkout scm
@@ -33,44 +34,70 @@ pipeline {
 
         stage('Confirm Docker Root Dir') {
             steps {
-                sh '''
-                    echo "Docker Root Dir:"
-                    docker info | grep "Docker Root Dir"
-                '''
+                sh 'echo Docker Root Dir:'
+                sh 'docker info | grep "Docker Root Dir"'
             }
         }
 
-        stage('Prepare Workspace for Docker') {
+        stage('Verify Workspace Files') {
             steps {
-                sh '''
-                    rm -rf /tmp/app || true
-                    mkdir -p /tmp/app
-                    cd $WORKSPACE
-                    tar cf - CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js package-lock.json package.json | (cd /tmp/app && tar xf -)
-                    ls -la /tmp/app
-                '''
+                echo 'Listing files in workspace:'
+                sh 'ls -la $WORKSPACE'
+                echo 'Showing package.json content:'
+                sh 'cat $WORKSPACE/package.json'
             }
         }
 
         stage('Verify Docker Mount') {
             steps {
+                echo 'Listing files inside Docker container at /app:'
                 sh '''
-                    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
-                    docker run --rm -v /tmp/app:/app -w /app node:16 cat package.json || echo "package.json not found"
+                    docker run --rm -v $WORKSPACE:/app -w /app node:16 ls -la /app
+                    docker run --rm -v $WORKSPACE:/app -w /app node:16 cat package.json
                 '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
+                sh 'docker run --rm -v $WORKSPACE:/app -w /app node:16 npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
                 sh '''
-                    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
+                    docker run --rm -v /tmp/app:/app -w /app node:16 npm test
                 '''
             }
         }
 
-        // ... remaining stages as before
+        stage('Security Scan') {
+            steps {
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 /bin/sh -c "
+                    npm install -g snyk && snyk test || exit 1
+                    "
+                '''
+            }
+        }
 
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t $IMAGE_NAME ."
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE_NAME
+                    '''
+                }
+            }
+        }
     }
 
     post {
