@@ -28,6 +28,7 @@ pipeline {
 	stage('Checkout') {
 		    steps {
 		        checkout scm
+		        sh 'ls -la $WORKSPACE'
 		    }
 		}
 		
