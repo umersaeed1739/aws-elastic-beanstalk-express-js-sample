@@ -25,7 +25,12 @@ pipeline {
 	    }
 	}
 
-
+	stage('Checkout') {
+		    steps {
+		        checkout scm
+		    }
+		}
+		
         stage('Install Dependencies') {
             steps {
                 sh 'docker run --rm -v $PWD:/app -w /app node:16 npm install'
