@@ -35,9 +35,7 @@ pipeline {
 	stage('Install Dependencies') {
 	    steps {
 		sh '''
-		    docker run --rm -v $WORKSPACE:/app -w /app node:16 /bin/sh -c "
-		    npm install
-		    "
+		    docker run --rm -v "$WORKSPACE":/app -w /app node:16 npm install
 		'''
 	    }
 	}
