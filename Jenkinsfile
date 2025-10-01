@@ -51,8 +51,12 @@ pipeline {
 		    rm -rf \$APP_STAGING_DIR
 		    mkdir -p \$APP_STAGING_DIR
 		    
-		    # Remove 'temp_app' from the list to avoid copying a directory into itself
+		    # Copy all files
 		    cp -r CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js docker_build package-lock.json package.json \$APP_STAGING_DIR/
+		    
+		    # FIX: Change ownership to the typical Docker non-root user (UID 1000)
+		    # This ensures the user inside the container can read and write the files.
+		    chown -R 1000:1000 \$APP_STAGING_DIR
 		    
 		    ls -la \$APP_STAGING_DIR/
 		"""
