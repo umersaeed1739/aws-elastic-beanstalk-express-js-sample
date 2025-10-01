@@ -1,9 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:16'
-        }
-    }
+    agent any
 
     environment {
         IMAGE_NAME = 'umersaeed732/nodejs-sample-app'
@@ -11,18 +7,36 @@ pipeline {
 
     stages {
         stage('Install Dependencies') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root' // optional, if permission issues
+                }
+            }
             steps {
                 sh 'npm install'
             }
         }
 
         stage('Run Tests') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root' // optional
+                }
+            }
             steps {
                 sh 'npm test'
             }
         }
 
         stage('Security Scan') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root' // optional
+                }
+            }
             steps {
                 sh 'npm install -g snyk'
                 sh 'snyk test || exit 1'
@@ -31,7 +45,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh "docker build -t $IMAGE_NAME ."
             }
         }
 
@@ -50,6 +64,8 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+            // You may add other post actions like sending notifications here
         }
     }
 }
+
