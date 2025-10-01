@@ -34,15 +34,13 @@ pipeline {
 	stage('Install Dependencies') {
 	    steps {
 		sh '''
-		    docker run --rm -w /app node:16 /bin/sh -c "
-		    mkdir -p /app &&
-		    cp -r $WORKSPACE/* /app &&
-		    cd /app &&
+		    docker run --rm -v $WORKSPACE:/app -w /app node:16 /bin/sh -c "
 		    npm install
 		    "
 		'''
 	    }
 	}
+
 
         stage('Run Tests') {
             steps {
