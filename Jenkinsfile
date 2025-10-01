@@ -47,7 +47,11 @@ pipeline {
                 sh 'cat $WORKSPACE/package.json'
             }
         }
-
+	stage('Find package.json') {
+	    steps {
+		sh 'find $WORKSPACE -name package.json'
+	    }
+	}
         stage('Verify Docker Mount') {
             steps {
                 echo 'Listing files inside Docker container at /app:'
