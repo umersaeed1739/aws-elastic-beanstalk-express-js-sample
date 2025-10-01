@@ -31,41 +31,33 @@ pipeline {
             }
         }
 
-	stage('Prepare Workspace for Docker') {
-	    steps {
-		sh '''
-		    rm -rf /tmp/app || true
-		    mkdir -p /tmp/app
-		    cp -r \
-		    $WORKSPACE/CODE_OF_CONDUCT.md \
-		    $WORKSPACE/CONTRIBUTING.md \
-		    $WORKSPACE/Jenkinsfile \
-		    $WORKSPACE/LICENSE \
-		    $WORKSPACE/README.md \
-		    $WORKSPACE/app.js \
-		    $WORKSPACE/package-lock.json \
-		    $WORKSPACE/package.json \
-		    /tmp/app/
-		    ls -la /tmp/app
-		'''
-	    }
-	}
+        stage('Prepare Workspace for Docker') {
+            steps {
+                sh '''
+                    rm -rf /tmp/app
+                    mkdir -p /tmp/app
+                    cd $WORKSPACE
+                    tar cf - CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js package-lock.json package.json | (cd /tmp/app && tar xf -)
+                    ls -la /tmp/app
+                '''
+            }
+        }
 
-	stage('Verify Docker Mount') {
-	    steps {
-		sh '''
-		    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
-		'''
-	    }
-	}
+        stage('Verify Docker Mount') {
+            steps {
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
+                '''
+            }
+        }
 
-	stage('Install Dependencies') {
-	    steps {
-		sh '''
-		    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
-		'''
-	    }
-	}
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
+                '''
+            }
+        }
 
         stage('Run Tests') {
             steps {
