@@ -44,6 +44,8 @@ pipeline {
                 sh '''
                     rm -rf /tmp/app
                     mkdir -p /tmp/app
+                    ls -l /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
+                    cat /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
                     cp -r $WORKSPACE/package.json $WORKSPACE/package-lock.json $WORKSPACE/app.js $WORKSPACE/README.md $WORKSPACE/LICENSE $WORKSPACE/Jenkinsfile $WORKSPACE/docker_build /tmp/app/
                 '''
             }
