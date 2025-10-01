@@ -7,24 +7,40 @@ pipeline {
 
     stages {
         stage('Install Dependencies') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root'  // optional if you need permissions
+                }
+            }
             steps {
-                // Use Docker CLI to run commands inside a node:16 container
-                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm install'
+                sh 'npm install'
             }
         }
 
         stage('Run Tests') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root'
+                }
+            }
             steps {
-                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm test'
+                sh 'npm test'
             }
         }
 
         stage('Security Scan') {
+            agent {
+                docker {
+                    image 'node:16'
+                    args '-u root:root'
+                }
+            }
             steps {
                 sh '''
-                    docker run --rm -v $PWD:/app -w /app node:16 /bin/sh -c "
-                    npm install -g snyk && snyk test || exit 1
-                    "
+                   npm install -g snyk
+                   snyk test || exit 1
                 '''
             }
         }
