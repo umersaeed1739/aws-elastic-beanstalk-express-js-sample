@@ -38,7 +38,18 @@ pipeline {
                     mkdir -p /tmp/app
                     cd $WORKSPACE
                     tar cf - CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js package-lock.json package.json | (cd /tmp/app && tar xf -)
+                '''
+            }
+        }
+
+        // New debug stage to verify files on host
+        stage('Verify Host Files') {
+            steps {
+                sh '''
+                    echo "Listing files in /tmp/app on host:"
                     ls -la /tmp/app
+                    echo "Showing package.json content on host:"
+                    cat /tmp/app/package.json
                 '''
             }
         }
@@ -47,6 +58,7 @@ pipeline {
             steps {
                 sh '''
                     docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
+                    docker run --rm -v /tmp/app:/app -w /app node:16 cat package.json
                 '''
             }
         }
