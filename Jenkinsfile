@@ -47,6 +47,9 @@ pipeline {
                     ls -l /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
                     cat /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
                     cp -r /var/jenkins_home/workspace/20294728_Project2_pipeline@2/* /tmp/app/
+                    ls -la /tmp/app/
+                    ls -la /tmp/app/package.json
+                    cat /tmp/app/package.json
                 '''
             }
         }
