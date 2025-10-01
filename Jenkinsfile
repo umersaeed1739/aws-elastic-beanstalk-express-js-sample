@@ -7,39 +7,25 @@ pipeline {
 
     stages {
         stage('Install Dependencies') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root' // optional, if permission issues
-                }
-            }
             steps {
-                sh 'npm install'
+                // Use Docker CLI to run commands inside a node:16 container
+                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm install'
             }
         }
 
         stage('Run Tests') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root' // optional
-                }
-            }
             steps {
-                sh 'npm test'
+                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm test'
             }
         }
 
         stage('Security Scan') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root' // optional
-                }
-            }
             steps {
-                sh 'npm install -g snyk'
-                sh 'snyk test || exit 1'
+                sh '''
+                    docker run --rm -v $PWD:/app -w /app node:16 /bin/sh -c "
+                    npm install -g snyk && snyk test || exit 1
+                    "
+                '''
             }
         }
 
@@ -64,7 +50,6 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
-            // You may add other post actions like sending notifications here
         }
     }
 }
