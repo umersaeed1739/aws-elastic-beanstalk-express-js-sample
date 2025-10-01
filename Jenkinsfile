@@ -44,8 +44,7 @@ pipeline {
                 sh '''
                     rm -rf /tmp/app
                     mkdir -p /tmp/app
-                    cd $WORKSPACE
-                    tar cf - package.json package-lock.json app.js README.md LICENSE Jenkinsfile docker_build | tar xf - -C /tmp/app
+                    cp -r $WORKSPACE/package.json $WORKSPACE/package-lock.json $WORKSPACE/app.js $WORKSPACE/README.md $WORKSPACE/LICENSE $WORKSPACE/Jenkinsfile $WORKSPACE/docker_build /tmp/app/
                 '''
             }
         }
