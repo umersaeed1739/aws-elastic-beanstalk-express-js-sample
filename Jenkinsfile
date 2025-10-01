@@ -6,51 +6,70 @@ pipeline {
     }
 
     stages {
-	stage('Prepare Jenkins environment') {
-	    steps {
-		script {
-		    def dockerExists = sh(script: 'which docker || echo "notfound"', returnStdout: true).trim()
-		    if (dockerExists == 'notfound') {
-		        echo 'Docker CLI not found, installing...'
-		        sh '''
-		            apt-get update
-		            apt-get install -y curl
-		            curl -fsSL https://get.docker.com -o get-docker.sh
-		            sh get-docker.sh
-		        '''
-		    } else {
-		        echo "Docker CLI found at ${dockerExists}"
-		    }
-		}
-	    }
-	}
+        stage('Prepare Jenkins environment') {
+            steps {
+                script {
+                    def dockerExists = sh(script: 'which docker || echo "notfound"', returnStdout: true).trim()
+                    if (dockerExists == 'notfound') {
+                        echo 'Docker CLI not found, installing...'
+                        sh '''
+                            apt-get update
+                            apt-get install -y curl
+                            curl -fsSL https://get.docker.com -o get-docker.sh
+                            sh get-docker.sh
+                        '''
+                    } else {
+                        echo "Docker CLI found at ${dockerExists}"
+                    }
+                }
+            }
+        }
 
-	stage('Checkout') {
-		    steps {
-		        checkout scm
-		        sh 'ls -la $WORKSPACE'
-		    }
-		}
-		
-	stage('Install Dependencies') {
-	    steps {
-		sh '''
-		    docker run --rm -v "$WORKSPACE":/app -w /app node:16 npm install
-		'''
-	    }
-	}
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
+        stage('Prepare Workspace for Docker') {
+            steps {
+                sh '''
+                    rm -rf /tmp/app || true
+                    mkdir -p /tmp/app
+                    cp -r $WORKSPACE/* /tmp/app/
+                    ls -la /tmp/app
+                '''
+            }
+        }
+
+        stage('Verify Docker Mount') {
+            steps {
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
+                '''
+            }
+        }
 
         stage('Run Tests') {
             steps {
-                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm test'
+                sh '''
+                    docker run --rm -v /tmp/app:/app -w /app node:16 npm test
+                '''
             }
         }
 
         stage('Security Scan') {
             steps {
                 sh '''
-                    docker run --rm -v $PWD:/app -w /app node:16 /bin/sh -c "
+                    docker run --rm -v /tmp/app:/app -w /app node:16 /bin/sh -c "
                     npm install -g snyk && snyk test || exit 1
                     "
                 '''
