@@ -6,41 +6,47 @@ pipeline {
     }
 
     stages {
-        stage('Install Dependencies') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root'  // optional if you need permissions
+        stage('Prepare Jenkins environment') {
+            steps {
+                script {
+                    // Check if docker CLI is installed, install if missing
+                    def dockerExists = sh(script: 'which docker || echo "notfound"', returnStdout: true).trim()
+                    if (dockerExists == 'notfound') {
+                        echo 'Docker CLI not found, installing...'
+                        // Assuming Debian/Ubuntu based Jenkins image
+                        sh '''
+                            apt-get update && \
+                            apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
+                            curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
+                            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
+                            apt-get update && \
+                            apt-get install -y docker-ce-cli
+                        '''
+                    } else {
+                        echo "Docker CLI found at ${dockerExists}"
+                    }
                 }
             }
+        }
+
+        stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm install'
             }
         }
 
         stage('Run Tests') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root'
-                }
-            }
             steps {
-                sh 'npm test'
+                sh 'docker run --rm -v $PWD:/app -w /app node:16 npm test'
             }
         }
 
         stage('Security Scan') {
-            agent {
-                docker {
-                    image 'node:16'
-                    args '-u root:root'
-                }
-            }
             steps {
                 sh '''
-                   npm install -g snyk
-                   snyk test || exit 1
+                    docker run --rm -v $PWD:/app -w /app node:16 /bin/sh -c "
+                    npm install -g snyk && snyk test || exit 1
+                    "
                 '''
             }
         }
