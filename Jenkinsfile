@@ -45,18 +45,31 @@ pipeline {
 	stage('Prepare Workspace for Docker') {
 	    steps {
 		sh """
-		    # Define the variable inside the script for shell use
+		    # Define the staging directory variable locally for shell script use
 		    APP_STAGING_DIR=/var/jenkins_home/workspace/20294728_Project2_pipeline@2/temp_app 
 		    
 		    rm -rf \$APP_STAGING_DIR
 		    mkdir -p \$APP_STAGING_DIR
 		    
-		    # Copy all files
+		    # Copy all necessary files into the staging directory
 		    cp -r CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js docker_build package-lock.json package.json \$APP_STAGING_DIR/
 		    
-		    # FIX: Change ownership to the typical Docker non-root user (UID 1000)
-		    # This ensures the user inside the container can read and write the files.
+		    # Ensure proper permissions for the default non-root Docker user (UID 1000)
 		    chown -R 1000:1000 \$APP_STAGING_DIR
+
+		    # Remove any existing node_modules to ensure a clean build
+		    rm -rf \$APP_STAGING_DIR/node_modules
+
+		    # FIX: Create a minimal Dockerfile for building and testing. 
+		    # This file will be used to create an image that already contains the code and dependencies.
+		    cat <<EOF > \$APP_STAGING_DIR/Dockerfile.test
+		    FROM node:16
+		    WORKDIR /app
+		    # The COPY command adds the source code to the image
+		    COPY . /app
+		    # npm install is run during the build, not during 'docker run'
+		    RUN npm install
+		    EOF
 		    
 		    ls -la \$APP_STAGING_DIR/
 		"""
@@ -77,12 +90,13 @@ pipeline {
 	}
 // ----------------------------------------------------------------------
 
-        stage('Install Dependencies') {
-            steps {
-                // FIX: Replace /tmp/app with APP_STAGING_DIR
-                sh 'docker run --rm -v ${APP_STAGING_DIR}:/app -w /app node:16 npm install'
-            }
-        }
+	stage('Install Dependencies') {
+	    steps {
+		echo 'Building test image with dependencies installed...'
+		// Build a temporary image based on the staging directory and the Dockerfile.test
+		sh "docker build -t node-app-test:latest -f \${APP_STAGING_DIR}/Dockerfile.test \${APP_STAGING_DIR}"
+	    }
+	}
 
         stage('Run Tests') {
             steps {
