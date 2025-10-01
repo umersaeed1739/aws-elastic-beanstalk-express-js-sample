@@ -54,7 +54,7 @@ pipeline {
 	stage('Verify Docker Mount') {
 	    steps {
 		sh '''
-		    docker run --rm -v $WORKSPACE/docker_build:/app -w /app node:16 ls -la /app
+		    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
 		'''
 	    }
 	}
@@ -62,7 +62,7 @@ pipeline {
 	stage('Install Dependencies') {
 	    steps {
 		sh '''
-		    docker run --rm -v $WORKSPACE/docker_build:/app -w /app node:16 npm install
+		    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
 		'''
 	    }
 	}
