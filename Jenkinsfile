@@ -31,13 +31,13 @@ pipeline {
             }
         }
 
-        stage('Prepare Workspace for Docker') {
+	stage('Prepare Workspace for Docker') {
 	    steps {
 		sh '''
-		    rm -rf $WORKSPACE/docker_build || true
-		    mkdir -p $WORKSPACE/docker_build
-		    cp -r $WORKSPACE/* $WORKSPACE/docker_build/
-		    ls -la $WORKSPACE/docker_build
+		    rm -rf /tmp/app || true
+		    mkdir -p /tmp/app
+		    rsync -av --exclude='docker_build' $WORKSPACE/ /tmp/app/
+		    ls -la /tmp/app
 		'''
 	    }
 	}
