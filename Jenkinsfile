@@ -42,18 +42,22 @@ pipeline {
         
 // ----------------------------------------------------------------------
         
-        stage('Prepare Workspace for Docker') {
-            steps {
-                sh """
-                    # FIX: Use the new APP_STAGING_DIR variable for a reliable mount point
-                    rm -rf \$APP_STAGING_DIR
-                    mkdir -p \$APP_STAGING_DIR
-                    # Copy all contents from the current workspace into the staging directory
-                    cp -r * \$APP_STAGING_DIR/
-                    ls -la \$APP_STAGING_DIR/
-                """
-            }
-        }
+	stage('Prepare Workspace for Docker') {
+	    steps {
+		sh """
+		    # Define the variable inside the script for shell use
+		    APP_STAGING_DIR=/var/jenkins_home/workspace/20294728_Project2_pipeline@2/temp_app 
+		    
+		    rm -rf \$APP_STAGING_DIR
+		    mkdir -p \$APP_STAGING_DIR
+		    
+		    # Remove 'temp_app' from the list to avoid copying a directory into itself
+		    cp -r CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js docker_build package-lock.json package.json \$APP_STAGING_DIR/
+		    
+		    ls -la \$APP_STAGING_DIR/
+		"""
+	    }
+	}
 
 // ----------------------------------------------------------------------
         
