@@ -25,7 +25,6 @@ pipeline {
             }
         }
 
-        
         stage('Checkout') {
             steps {
                 checkout scm
@@ -39,40 +38,37 @@ pipeline {
             }
         }
 
-        stage('Verify Workspace Files') {
+        stage('Prepare Workspace for Docker') {
             steps {
-                echo 'Listing files in workspace:'
-                sh 'ls -la $WORKSPACE'
-                echo 'Showing package.json content:'
-                sh 'cat $WORKSPACE/package.json'
+                // Clean and create temp dir, then copy all necessary files via tar (including package.json)
+                sh '''
+                    rm -rf /tmp/app
+                    mkdir -p /tmp/app
+                    cd $WORKSPACE
+                    tar cf - package.json package-lock.json app.js README.md LICENSE Jenkinsfile docker_build | tar xf - -C /tmp/app
+                '''
             }
         }
-	stage('Find package.json') {
-	    steps {
-		sh 'find $WORKSPACE -name package.json'
-	    }
-	}
+
         stage('Verify Docker Mount') {
             steps {
                 echo 'Listing files inside Docker container at /app:'
                 sh '''
-                    docker run --rm -v $WORKSPACE:/app -w /app node:16 ls -la /app
-                    docker run --rm -v $WORKSPACE:/app -w /app node:16 cat package.json
+                    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
+                    docker run --rm -v /tmp/app:/app -w /app node:16 cat package.json
                 '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'docker run --rm -v $WORKSPACE:/app -w /app node:16 npm install'
+                sh 'docker run --rm -v /tmp/app:/app -w /app node:16 npm install'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                    docker run --rm -v /tmp/app:/app -w /app node:16 npm test
-                '''
+                sh 'docker run --rm -v /tmp/app:/app -w /app node:16 npm test'
             }
         }
 
@@ -88,7 +84,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $IMAGE_NAME ."
+                sh 'docker build -t $IMAGE_NAME /tmp/app'
             }
         }
 
