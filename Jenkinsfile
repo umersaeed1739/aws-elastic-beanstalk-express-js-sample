@@ -45,32 +45,32 @@ pipeline {
 	stage('Prepare Workspace for Docker') {
 	    steps {
 		sh """
-		    # Define the staging directory variable locally for shell script use
+		    # First shell block: copy files, set permissions (no heredoc here)
 		    APP_STAGING_DIR=/var/jenkins_home/workspace/20294728_Project2_pipeline@2/temp_app 
 		    
 		    rm -rf \$APP_STAGING_DIR
 		    mkdir -p \$APP_STAGING_DIR
 		    
-		    # Copy all necessary files and set permissions/ownership
+		    # Copy files and set permissions/ownership
 		    cp -r CODE_OF_CONDUCT.md CONTRIBUTING.md Jenkinsfile LICENSE README.md app.js docker_build package-lock.json package.json \$APP_STAGING_DIR/
 		    chown -R 1000:1000 \$APP_STAGING_DIR
 		    rm -rf \$APP_STAGING_DIR/node_modules
 		"""
-		// NEW: Use a separate 'sh' step for the Dockerfile creation
+		// SECOND SHELL BLOCK: Use dashed heredoc and ensure NO INDENTATION for the content and closing EOF
 		sh """
-		    APP_STAGING_DIR=/var/jenkins_home/workspace/20294728_Project2_pipeline@2/temp_app 
-		    
-		    cat <<EOF > \${APP_STAGING_DIR}/Dockerfile.test
-		    FROM node:16
-		    WORKDIR /app
-		    COPY . /app
-		    RUN npm install
-		    EOF
-		    
-		    # Optional: Check the contents of the generated file
-		    echo "--- Dockerfile.test contents ---"
-		    cat \${APP_STAGING_DIR}/Dockerfile.test
-		    echo "------------------------------"
+	APP_STAGING_DIR=/var/jenkins_home/workspace/20294728_Project2_pipeline@2/temp_app 
+
+	cat <<-EOF > \${APP_STAGING_DIR}/Dockerfile.test
+	FROM node:16
+	WORKDIR /app
+	COPY . /app
+	RUN npm install
+	EOF
+		
+	# Optional: Check the contents of the generated file
+	echo "--- Dockerfile.test contents ---"
+	cat \${APP_STAGING_DIR}/Dockerfile.test
+	echo "------------------------------"
 		"""
 	    }
 	}
