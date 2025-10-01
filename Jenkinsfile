@@ -36,7 +36,16 @@ pipeline {
 		sh '''
 		    rm -rf /tmp/app || true
 		    mkdir -p /tmp/app
-		    rsync -av --exclude='docker_build' $WORKSPACE/ /tmp/app/
+		    cp -r \
+		    $WORKSPACE/CODE_OF_CONDUCT.md \
+		    $WORKSPACE/CONTRIBUTING.md \
+		    $WORKSPACE/Jenkinsfile \
+		    $WORKSPACE/LICENSE \
+		    $WORKSPACE/README.md \
+		    $WORKSPACE/app.js \
+		    $WORKSPACE/package-lock.json \
+		    $WORKSPACE/package.json \
+		    /tmp/app/
 		    ls -la /tmp/app
 		'''
 	    }
