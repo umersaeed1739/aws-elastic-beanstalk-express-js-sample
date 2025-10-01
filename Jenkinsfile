@@ -32,31 +32,31 @@ pipeline {
         }
 
         stage('Prepare Workspace for Docker') {
-            steps {
-                sh '''
-                    rm -rf /tmp/app || true
-                    mkdir -p /tmp/app
-                    cp -r $WORKSPACE/* /tmp/app/
-                    ls -la /tmp/app
-                '''
-            }
-        }
+	    steps {
+		sh '''
+		    rm -rf $WORKSPACE/docker_build || true
+		    mkdir -p $WORKSPACE/docker_build
+		    cp -r $WORKSPACE/* $WORKSPACE/docker_build/
+		    ls -la $WORKSPACE/docker_build
+		'''
+	    }
+	}
 
-        stage('Verify Docker Mount') {
-            steps {
-                sh '''
-                    docker run --rm -v /tmp/app:/app -w /app node:16 ls -la /app
-                '''
-            }
-        }
+	stage('Verify Docker Mount') {
+	    steps {
+		sh '''
+		    docker run --rm -v $WORKSPACE/docker_build:/app -w /app node:16 ls -la /app
+		'''
+	    }
+	}
 
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    docker run --rm -v /tmp/app:/app -w /app node:16 npm install
-                '''
-            }
-        }
+	stage('Install Dependencies') {
+	    steps {
+		sh '''
+		    docker run --rm -v $WORKSPACE/docker_build:/app -w /app node:16 npm install
+		'''
+	    }
+	}
 
         stage('Run Tests') {
             steps {
