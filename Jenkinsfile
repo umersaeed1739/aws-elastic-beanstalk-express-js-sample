@@ -86,30 +86,31 @@ pipeline {
 	    }
 	}
 
-        stage('Run Tests') {
-            steps {
-                // FIX: Replace /tmp/app with APP_STAGING_DIR
-                sh 'docker run --rm -v ${APP_STAGING_DIR}:/app -w /app node:16 npm test'
-            }
-        }
+	stage('Run Tests') {
+	    steps {
+		// FIX: Use the 'node-app-test:latest' image, which contains the code and dependencies.
+		sh 'docker run --rm node-app-test:latest npm test'
+	    }
+	}
 
-        stage('Security Scan') {
-            steps {
-                // FIX: Replace /tmp/app with APP_STAGING_DIR
-                sh '''
-                    docker run --rm -v ${APP_STAGING_DIR}:/app -w /app node:16 /bin/sh -c "
-                    npm install -g snyk && snyk test || exit 1
-                    "
-                '''
-            }
-        }
+	stage('Security Scan') {
+	    steps {
+		// FIX: Run snyk inside the 'node-app-test:latest' image
+		sh '''
+		    docker run --rm node-app-test:latest /bin/sh -c "
+		    # npm is available since dependencies were installed in the build step
+		    npm install -g snyk && snyk test || exit 1
+		    "
+		'''
+	    }
+	}
 
-        stage('Build Docker Image') {
-            steps {
-                // FIX: Replace /tmp/app with APP_STAGING_DIR
-                sh 'docker build -t $IMAGE_NAME ${APP_STAGING_DIR}'
-            }
-        }
+	stage('Build Docker Image') {
+	    steps {
+		# Assuming the app's *production* Dockerfile is located in the staging directory
+		sh "docker build -t \$IMAGE_NAME \${APP_STAGING_DIR}"
+	    }
+	}
 
         stage('Push Docker Image') {
             steps {
