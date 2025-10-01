@@ -38,21 +38,17 @@ pipeline {
             }
         }
 
-        stage('Prepare Workspace for Docker') {
-            steps {
-                // Clean and create temp dir, then copy all necessary files via tar (including package.json)
-                sh '''
-                    rm -rf /tmp/app
-                    mkdir -p /tmp/app
-                    ls -l /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
-                    cat /var/jenkins_home/workspace/20294728_Project2_pipeline@2/package.json
-                    cp -r /var/jenkins_home/workspace/20294728_Project2_pipeline@2/* /tmp/app/
-                    ls -la /tmp/app/
-                    ls -la /tmp/app/package.json
-                    cat /tmp/app/package.json
-                '''
-            }
-        }
+	stage('Prepare Workspace for Docker') {
+	    steps {
+		sh """
+		    rm -rf /tmp/app
+		    mkdir -p /tmp/app
+		    # Use '*' to copy all contents from the workspace to /tmp/app/
+		    cp -r * /tmp/app/
+		    ls -la /tmp/app/
+		"""
+	    }
+	}
 
         stage('Verify Docker Mount') {
             steps {
