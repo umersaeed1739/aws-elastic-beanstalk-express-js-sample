@@ -61,17 +61,16 @@ pipeline {
 
 // ----------------------------------------------------------------------
         
-        stage('Verify Docker Mount') {
-            steps {
-                echo 'Listing files inside Docker container at /app:'
-                sh """
-                    # FIX: Use the new APP_STAGING_DIR variable in the volume mount
-                    docker run --rm -v \${APP_STAGING_DIR}:/app -w /app node:16 ls -la /app
-                    docker run --rm -v \${APP_STAGING_DIR}:/app -w /app node:16 cat package.json
-                """
-            }
-        }
-
+	stage('Verify Docker Mount') {
+	    steps {
+		echo 'Listing files inside Docker container at /app:'
+		sh """
+		    # ADD :z flag to the volume mount
+		    docker run --rm -v \${APP_STAGING_DIR}:/app:z -w /app node:16 ls -la /app
+		    docker run --rm -v \${APP_STAGING_DIR}:/app:z -w /app node:16 cat package.json
+		"""
+	    }
+	}
 // ----------------------------------------------------------------------
 
         stage('Install Dependencies') {
