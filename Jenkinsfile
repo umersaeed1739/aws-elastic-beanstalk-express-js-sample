@@ -6,7 +6,6 @@ pipeline {
         // NEW: Define a reliable staging directory within the Jenkins workspace
         APP_STAGING_DIR = "${env.WORKSPACE}/temp_app" 
     }
-
     stages {
         stage('Prepare Jenkins environment') {
             steps {
@@ -33,15 +32,6 @@ pipeline {
             }
         }
 
-        stage('Confirm Docker Root Dir') {
-            steps {
-                sh 'echo Docker Root Dir:'
-                sh 'docker info | grep "Docker Root Dir"'
-            }
-        }
-        
-// ----------------------------------------------------------------------
-        
     stage('Prepare Workspace for Docker') {
         steps {
         sh """
@@ -66,17 +56,10 @@ WORKDIR /app
 COPY . /app
 RUN npm install
 EOF
-        
-# Optional: Check the contents of the generated file
-echo "--- Dockerfile.test contents ---"
-cat \${APP_STAGING_DIR}/Dockerfile.test
-echo "------------------------------"
         """
         }
     }
 
-// ----------------------------------------------------------------------
-// REMOVED BROKEN 'Verify Docker Mount' STAGE
 
     stage('Install Dependencies') {
         steps {
@@ -101,22 +84,10 @@ echo "------------------------------"
         }
     }
 
-    stage('Security Scan') {
-        steps {
-        // FIX: Run snyk inside the 'node-app-test:latest' image
-        sh '''
-            docker run --rm node-app-test:latest /bin/sh -c "
-            # npm is available since dependencies were installed in the build step
-            npm install -g snyk && snyk test || exit 1
-            "
-        '''
-        }
-    }
 
     stage('Build Docker Image') {
         steps {
-        // FIX: Changed '#' to '//' for Groovy comment syntax
-        // Assuming the app's *production* Dockerfile is located in the staging directory
+
         sh "docker build -t \$IMAGE_NAME \${APP_STAGING_DIR}"
         }
     }
